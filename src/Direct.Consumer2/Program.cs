@@ -1,4 +1,5 @@
-﻿using RabbitMQ.Client;
+﻿using Model.Share;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 
@@ -7,21 +8,23 @@ var factory = new ConnectionFactory { HostName = "localhost", Password = "pass",
 using var connection = await factory.CreateConnectionAsync();
 using var channel = await connection.CreateChannelAsync();
 
-await channel.QueueDeclareAsync(queue: "hello", durable: false, exclusive: false, autoDelete: false,
-    arguments: null);
 
-Console.WriteLine(" [*] Waiting for messages.");
+await channel.ExchangeDeclareAsync(exchange: MyExchange.Direct, type: ExchangeType.Direct);
+
+await channel.QueueDeclareAsync(MyQueue.DirectQueue2, durable: false, exclusive: false, autoDelete: false);
+
+await channel.QueueBindAsync(queue: MyQueue.DirectQueue2, exchange: MyExchange.Direct, routingKey: MyRoutingKey.Direct);
 
 var consumer = new AsyncEventingBasicConsumer(channel);
 consumer.ReceivedAsync += (model, ea) =>
 {
     var body = ea.Body.ToArray();
     var message = Encoding.UTF8.GetString(body);
-    Console.WriteLine($" [x] Received {message}");
+    Console.WriteLine($" {ea.Exchange} --- {ea.RoutingKey} ----- [Message] ::: {message}");
     return Task.CompletedTask;
 };
 
-await channel.BasicConsumeAsync("hello", autoAck: true, consumer: consumer);
+await channel.BasicConsumeAsync(queue: MyQueue.DirectQueue2, autoAck: true, consumer: consumer);
 
 Console.WriteLine(" Press [enter] to exit.");
 Console.ReadLine();
