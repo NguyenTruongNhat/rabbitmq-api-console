@@ -1,0 +1,6 @@
+@SendReceiveApi_HostAddress = http://localhost:5276
+
+GET {{SendReceiveApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
